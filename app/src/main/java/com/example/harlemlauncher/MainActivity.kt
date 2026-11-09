@@ -1,9 +1,14 @@
+
 package com.example.harlemlauncher
 
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.ResolveInfo
 import android.graphics.Color
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
@@ -20,8 +25,9 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import java.util.Random
+import kotlin.math.sqrt
 
-class MainActivity : Activity() {
+class MainActivity : Activity(), SensorEventListener {
 
     private lateinit var root: FrameLayout
     private lateinit var grid: GridView
@@ -33,6 +39,7 @@ class MainActivity : Activity() {
     private var running = false
     private var startTime = 0L
     private var soloIndex = 0
+    private var lastShake = 0L
 
     // Timings (seconds) like in the original meme: 0-15.5 one dancer, then everybody
     private val dropAt = 15.5f
@@ -138,6 +145,32 @@ class MainActivity : Activity() {
         v.scaleX = 1f; v.scaleY = 1f
     }
 
+    // ---------- Shake the phone to start ----------
+
+    override fun onResume() {
+        super.onResume()
+        val sm = getSystemService(SENSOR_SERVICE) as SensorManager
+        sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let {
+            sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        (getSystemService(SENSOR_SERVICE) as SensorManager).unregisterListener(this)
+    }
+
+    override fun onSensorChanged(e: SensorEvent) {
+        val g = sqrt(e.values[0] * e.values[0] + e.values[1] * e.values[1] + e.values[2] * e.values[2]) / 9.81f
+        val now = SystemClock.uptimeMillis()
+        if (g > 2.6f && now - lastShake > 1500 && !running) {
+            lastShake = now
+            startShake()
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+
     override fun onStop() {
         super.onStop()
         if (running) stopShake()
@@ -171,4 +204,5 @@ class MainActivity : Activity() {
             return cell
         }
     }
+}
 }
