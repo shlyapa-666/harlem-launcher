@@ -201,8 +201,7 @@ class MainActivity : Activity(), SensorEventListener {
             resetView(cell)
             (cell.getChildAt(0) as ImageView).setImageDrawable(ri.loadIcon(packageManager))
             (cell.getChildAt(1) as TextView).text = ri.loadLabel(packageManager)
-            return cell
+                       return cell
         }
     }
-}
 }
